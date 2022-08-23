@@ -10,7 +10,8 @@ public class Main {
 //        Util util = new Util();
 //        util.getConnection();
         UserServiceImpl user = new UserServiceImpl();
-        user.createUsersTable();
+
+        user.dropUsersTable();
 
         Session session = Util.getSessionFactory().openSession();
         session.beginTransaction();
@@ -20,15 +21,14 @@ public class Main {
         session.save(new User("Svetlana", "Latysheva", (byte) 29));
         session.save(new User("Leonid", "Podsohin", (byte) 32));
         session.save(new User("Mikhail", "Karasev", (byte) 34));
+
+
 //        session.remove(user);
 
 
-//        user.saveUser("Andrew", "Latyshev", (byte) 35);
-//        user.saveUser("Svetlana", "Latysheva", (byte) 29);
-//        user.saveUser("Leonid", "Podsohin", (byte) 32);
-//        user.saveUser("Mikhail", "Karasev", (byte) 34);
+//        session.delete(User.class);
 
-//        user.removeUserById(1);
+        user.removeUserById(2);
 //        user.getAllUsers();
 //        user.cleanUsersTable();
 //        user.dropUsersTable();

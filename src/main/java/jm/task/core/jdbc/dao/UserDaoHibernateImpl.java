@@ -15,8 +15,9 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class UserDaoHibernateImpl implements UserDao {
-    private SessionFactory sessionFactory = Util.buildSessionFactory();
-    Session session = sessionFactory.openSession();
+    private static SessionFactory sessionFactory = Util.buildSessionFactory();
+//    Session session = sessionFactory.openSession();
+    User user = new User();
 
     public UserDaoHibernateImpl() {
     }
@@ -29,12 +30,12 @@ public class UserDaoHibernateImpl implements UserDao {
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
-        }    }
+        }
+    }
 
     @Override
     public void dropUsersTable() {
-        try {
-            PreparedStatement preparedStatement = new Util().getConnection().prepareStatement("DROP TABLE user");
+        try (PreparedStatement preparedStatement = new Util().getConnection().prepareStatement("DROP TABLE user")) {
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -43,11 +44,12 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void saveUser(String name, String lastName, byte age) {
+        Session session = sessionFactory.openSession();
+
         session.beginTransaction();
 
-//        User user = new User("Andrew", "Latyshev", (byte) 35);
-        session.save(User.class);
-        session.getTransaction().commit();
+        session.saveOrUpdate(User.class);
+        session.beginTransaction().commit();
 
         sessionFactory.close();
 
@@ -55,18 +57,21 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void removeUserById(long id) {
-        session.beginTransaction();
+        Session session = sessionFactory.openSession();
+        session.getTransaction();
 
-        User user = session.get(User.class, id);
-        session.remove(user);
-        session.getTransaction().commit();
+        User user = session.load(User.class, id);
+        session.delete(user);
+        session.flush();
 
         sessionFactory.close();
 
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<User> getAllUsers() {
+        Session session = sessionFactory.openSession();
 
         session.beginTransaction();
 
