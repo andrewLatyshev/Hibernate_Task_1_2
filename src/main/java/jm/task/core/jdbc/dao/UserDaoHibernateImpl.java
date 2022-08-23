@@ -3,6 +3,7 @@ package jm.task.core.jdbc.dao;
 
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
+import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
@@ -12,12 +13,14 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
+import static jm.task.core.jdbc.util.Util.buildSessionFactory;
+
 public class UserDaoHibernateImpl implements UserDao {
-    private static SessionFactory sessionFactory = Util.buildSessionFactory();
-//    Session session = sessionFactory.openSession();
-    User user = new User();
+    private static final SessionFactory sessionFactory = buildSessionFactory();
+    Session session;
 
     public UserDaoHibernateImpl() {
     }
@@ -26,72 +29,127 @@ public class UserDaoHibernateImpl implements UserDao {
     @Override
     public void createUsersTable() {
         try {
-            PreparedStatement preparedStatement = new Util().getConnection().prepareStatement("create table user (id INT auto_increment primary key not null , name NVARCHAR(20) not null , lastName NVARCHAR(20) not null, age INT not null)");
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            session = buildSessionFactory().openSession();
+            session.beginTransaction();
+            session.createSQLQuery("create table if not exists user(id BIGINT primary key auto_increment, name VARCHAR(20) not null, lastName VARCHAR(20) DEFAULT not null, age INT not null)");
+
+            session.getTransaction().commit();
+
+        } catch (HibernateException h) {
+            if (session.getTransaction() != null) {
+                session.getTransaction().rollback();
+            }
+        } finally {
+            session.close();
         }
     }
 
     @Override
     public void dropUsersTable() {
-        try (PreparedStatement preparedStatement = new Util().getConnection().prepareStatement("DROP TABLE user")) {
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        try {
+            session = buildSessionFactory().openSession();
+            session.beginTransaction();
+            session.createSQLQuery("drop table if exists user")
+                    .executeUpdate();
+            session.getTransaction().commit();
+
+        } catch (HibernateException h) {
+            if (session.getTransaction() != null) {
+                session.getTransaction().rollback();
+            }
+        } finally {
+            session.close();
         }
     }
 
     @Override
     public void saveUser(String name, String lastName, byte age) {
-        Session session = sessionFactory.openSession();
+        try {
+            session = buildSessionFactory().openSession();
+            session.beginTransaction();
 
-        session.beginTransaction();
+            User user = new User(name, lastName, age);
+            session.save(user);
 
-        session.saveOrUpdate(User.class);
-        session.beginTransaction().commit();
+            session.getTransaction().commit();
 
-        sessionFactory.close();
-
+        } catch(Exception sqlException) {
+            if (null != session.getTransaction()) {
+                session.getTransaction().rollback();
+            }
+            sqlException.printStackTrace();
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
     }
 
     @Override
     public void removeUserById(long id) {
-        Session session = sessionFactory.openSession();
-        session.getTransaction();
+        try {
+            session = buildSessionFactory().openSession();
+            session.beginTransaction();
 
-        User user = session.load(User.class, id);
-        session.delete(user);
-        session.flush();
+            User user = session.load(User.class, id);
+            session.delete(user);
 
-        sessionFactory.close();
+            session.getTransaction().commit();
 
+        } catch(Exception sqlException) {
+            if (null != session.getTransaction()) {
+                session.getTransaction().rollback();
+            }
+            sqlException.printStackTrace();
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public List<User> getAllUsers() {
-        Session session = sessionFactory.openSession();
+        List<User> userList = new ArrayList<>();
 
-        session.beginTransaction();
+        try {
+            session = buildSessionFactory().openSession();
+            session.beginTransaction();
 
+            userList = session.createQuery("from User ", User.class).getResultList();
 
-        CriteriaBuilder cb = sessionFactory.getCriteriaBuilder();
-        CriteriaQuery cq = cb.createQuery(User.class);
-        Root<User> user = cq.from(User.class);
-        cq.select(user);
-
-        Query query = session.createQuery(cq);
-
-        List<User> users = query.getResultList();
-        session.getTransaction().commit();
-
-        sessionFactory.close();
-
-        return users;
+        } catch(Exception sqlException) {
+            if (null != session.getTransaction()) {
+                session.getTransaction().rollback();
+            }
+            sqlException.printStackTrace();
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+        return userList;
     }
 
     @Override
     public void cleanUsersTable() {
+        try {
+            session = buildSessionFactory().openSession();
+            session.beginTransaction();
+
+            Query queryObj = session.createQuery("DELETE FROM User");
+            queryObj.executeUpdate();
+
+            session.getTransaction().commit();
+
+        } catch(Exception sqlException) {
+            if (null != session.getTransaction()) {
+                session.getTransaction().rollback();
+            }
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
     }
 }

@@ -1,69 +1,40 @@
 package jm.task.core.jdbc;
 
+import jm.task.core.jdbc.dao.UserDao;
+import jm.task.core.jdbc.dao.UserDaoHibernateImpl;
 import jm.task.core.jdbc.model.User;
-import jm.task.core.jdbc.service.UserServiceImpl;
 import jm.task.core.jdbc.util.Util;
 import org.hibernate.Session;
 
 public class Main {
     public static void main(String[] args) {
-//        Util util = new Util();
-//        util.getConnection();
-        UserServiceImpl user = new UserServiceImpl();
+        Util util = new Util();
+        util.getConnection();
+        UserDao userService = new UserDaoHibernateImpl();
+        User user1 = new User("Andrew", "Latyshev", (byte) 35);
+        User user2 = new User("Svetlana", "Latysheva", (byte) 29);
+        User user3 = new User("Leonid", "Podsohin", (byte) 32);
+        User user4 = new User("Mikhail", "Karasev", (byte) 34);
 
-        user.dropUsersTable();
-
-        Session session = Util.getSessionFactory().openSession();
+        Session session = Util.buildSessionFactory().openSession();
         session.beginTransaction();
 
-        user.createUsersTable();
-        session.save(new User("Andrew", "Latyshev", (byte) 35));
-        session.save(new User("Svetlana", "Latysheva", (byte) 29));
-        session.save(new User("Leonid", "Podsohin", (byte) 32));
-        session.save(new User("Mikhail", "Karasev", (byte) 34));
+        userService.dropUsersTable();
+        System.out.println("Mark");
+        userService.createUsersTable();
 
+        session.saveOrUpdate(user1);
+        session.saveOrUpdate(user2);
+        session.saveOrUpdate(user3);
+        session.saveOrUpdate(user4);
+        System.out.println("User с именем " + user1.getName() + " был(а) добавлен(а) в базу данных");
+        System.out.println("User с именем " + user2.getName() + " был(а) добавлен(а) в базу данных");
+        System.out.println("User с именем " + user3.getName() + " был(а) добавлен(а) в базу данных");
+        System.out.println("User с именем " + user4.getName() + " был(а) добавлен(а) в базу данных");
 
-//        session.remove(user);
-
-
-//        session.delete(User.class);
-
-        user.removeUserById(2);
-//        user.getAllUsers();
-//        user.cleanUsersTable();
-//        user.dropUsersTable();
-
-        System.out.println(user);
 
         session.close();
 
-
-
-//        User user = new User();
-//        user.setName("Andrew");
-//        user.setLastName("Latyshev");
-//        user.setAge((byte) 35);
-//
-//        user.setName("Svetlana");
-//        user.setLastName("Latysheva");
-//        user.setAge((byte) 29);
-//
-//        user.setName("Leonid");
-//        user.setLastName("Podsohin");
-//        user.setAge((byte) 32);
-//
-//        user.setName("Mikhail");
-//        user.setLastName("Karasev");
-//        user.setAge((byte) 35);
-//
-//        session.getTransaction().commit();
-//        Util.shutdown();
-//
-//        user.createUsersTable();
-//        user.saveUser("Andrew", "Latyshev", (byte) 35);
-//        user.saveUser("Svetlana", "Latysheva", (byte) 29);
-//        user.saveUser("Leonid", "Podsohin", (byte) 32);
-//        user.saveUser("Mikhail", "Karasev", (byte) 34);
 
     }
 
